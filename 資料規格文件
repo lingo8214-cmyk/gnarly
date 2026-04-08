@@ -1,0 +1,64 @@
+1 Patient（長者資料）
+欄位名稱	資料型別	必填	說明
+id	id	必填	Patient 唯一識別碼，例：elderly-001
+identifier	Identifier[]	必填	身分證字號，system 使用 moi.gov.tw
+name	HumanName[]	必填	姓名，含 family（姓）與 given（名）
+gender	code	必填	性別：male / female / other
+birthDate	date	必填	出生日期，格式 YYYY-MM-DD
+address	Address[]	必填	居住地址，含 city、district
+contact	BackboneElement[]	建議	緊急聯絡人（家屬）姓名與電話
+meta.profile	canonical[]	建議	TW Core Patient Profile URL
+
+2 Observation（生命徵象觀測）
+id	id	必填	Observation 唯一識別碼
+status	code	必填	資料狀態，固定值：final
+category	CodeableConcept[]	必填	類別：vital-signs（生命徵象）
+code	CodeableConcept	必填	LOINC 代碼：SpO2=59408-5，HR=8867-4，Temp=8310-5
+subject	Reference(Patient)	必填	關聯至 Patient Resource
+effectiveDateTime	dateTime	必填	量測時間（ISO 8601 格式，含時區）
+valueQuantity	Quantity	必填	量測數值與單位（UCUM）
+interpretation	CodeableConcept[]	建議	H=偏高 / L=偏低 / N=正常
+referenceRange	BackboneElement[]	建議	正常參考範圍
+
+量測項目	LOINC 代碼	單位（UCUM）	正常範圍
+血氧飽和度 (SpO2)	59408-5	% (percent)	95 – 100 %
+心率 (Heart Rate)	8867-4	/min	60 – 100 bpm
+體溫 (Body Temp)	8310-5	Cel (Celsius)	36.1 – 37.2 °C
+
+3 DetectedIssue（異常警示）
+id	id	必填	DetectedIssue 唯一識別碼
+status	code	必填	固定值：final
+severity	code	必填	嚴重程度：high / moderate / low
+code	CodeableConcept	建議	警示類型代碼
+patient	Reference(Patient)	必填	關聯至 Patient Resource
+identifiedDateTime	dateTime	必填	警示觸發時間
+detail	string	建議	警示詳細說明文字
+implicated	Reference[]	建議	關聯的 Observation（觸發來源）
+mitigation	BackboneElement[]	建議	已採取之處置措施
+
+4 Encounter（就醫/救護紀錄）
+id	id	必填	Encounter 唯一識別碼
+status	code	必填	in-progress / finished / cancelled
+class	Coding	必填	EMER（緊急救護）
+type	CodeableConcept[]	建議	就醫類型，含 SNOMED CT 代碼
+subject	Reference(Patient)	必填	關聯至 Patient Resource
+participant	BackboneElement[]	建議	參與的醫療人員（Practitioner）
+period	Period	建議	救護開始與結束時間
+location	BackboneElement[]	建議	目的地醫院（Location）
+reasonReference	Reference[]	建議	觸發原因（DetectedIssue）
+
+5 Location（地點資源）
+id	id	必填	Location 唯一識別碼
+status	code	必填	active / inactive
+name	string	必填	地點名稱（如：新北市立聯合醫院）
+type	CodeableConcept[]	建議	地點類型：HOSP（醫院）/ FIRE（消防局）
+telecom	ContactPoint[]	建議	聯絡電話
+address	Address	必填	完整地址
+position	BackboneElement	建議	GPS 座標（longitude / latitude）
+
+6 Practitioner（醫療人員）
+id	id	必填	Practitioner 唯一識別碼
+identifier	Identifier[]	建議	衛福部醫師執照號碼
+name	HumanName[]	必填	醫師姓名
+telecom	ContactPoint[]	建議	工作電話
+qualification	BackboneElement[]	建議	資格：MD（Doctor of Medicine）
