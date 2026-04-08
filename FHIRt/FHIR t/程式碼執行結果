@@ -1,0 +1,48 @@
+ FHIR 新北市獨居老人健康監測系統 - 執行結果
+============================================================
+ 
+【1】Patient Resource 建立成功
+  Patient ID  :  elderly-001
+  姓名        :  王大明
+  出生日期    :  1948-03-15
+  居住地址    :  新北市板橋區中山路一段100號
+  緊急聯絡人  :  王小華
+ 
+【2】生命徵象量測結果（Observation）
+  血氧飽和度  :  88 %
+  心率        :  112 bpm
+  體溫        :  38.9 °C
+  量測時間    :  2026-04-08T11:45:16Z
+ 
+【3】異常偵測分析
+  ⚠  血氧飽和度異常：88%（正常 >=95%）
+  ⚠  心率異常：112 bpm（正常 60-100 bpm）
+  ⚠  體溫異常：38.9°C（正常 36.1-37.2°C）
+ 
+【4】DetectedIssue 觸發警示
+  嚴重程度    :  HIGH
+  警示說明    :  血氧飽和度 88%（低於正常值95%）、心率 112 bpm
+                 （偏高）、體溫 38.9°C（發燒），建議立即派遣救護車。
+  處置措施    :  已通知家屬、社工及消防局
+ 
+【5】Encounter 救護派遣建立
+  Encounter ID :  enc-001
+  類型         :  emergency
+  主治醫師     :  陳志明醫師
+  送往醫院     :  新北市立聯合醫院
+  醫院地址     :  新北市三重區興德路65號
+ 
+【6】FHIR Bundle 摘要
+  Bundle 資源數量 : 8 個 FHIR Resources
+  - Patient        / elderly-001
+  - Observation    / obs-spo2-001
+  - Observation    / obs-hr-001
+  - Observation    / obs-temp-001
+  - DetectedIssue  / issue-001
+  - Location       / loc-hospital-001
+  - Practitioner   / prac-001
+  - Encounter      / enc-001
+ 
+  FHIR Bundle 已儲存至 fhir_bundle.json
+============================================================
+
