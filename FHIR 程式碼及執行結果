@@ -1,0 +1,271 @@
+"""
+FHIR 基礎實作 - 新北市獨居老人健康監測系統
+示範：建立 FHIR 資源並模擬健康異常警示流程
+"""
+
+import json
+from datetime import datetime, timezone
+
+# ─────────────────────────────────────────────
+# 1. Patient Resource - 獨居老人基本資料
+# ─────────────────────────────────────────────
+patient = {
+    "resourceType": "Patient",
+    "id": "elderly-001",
+    "meta": {
+        "profile": ["https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition/Patient-twcore"]
+    },
+    "identifier": [
+        {
+            "use": "official",
+            "type": {
+                "coding": [{"system": "http://terminology.hl7.org/CodeSystem/v2-0203", "code": "NNT"}]
+            },
+            "system": "http://www.moi.gov.tw",
+            "value": "A123456789"
+        }
+    ],
+    "name": [{"use": "official", "text": "王大明", "family": "王", "given": ["大明"]}],
+    "gender": "male",
+    "birthDate": "1948-03-15",
+    "address": [
+        {
+            "use": "home",
+            "text": "新北市板橋區中山路一段100號",
+            "city": "新北市",
+            "district": "板橋區",
+            "country": "TW"
+        }
+    ],
+    "contact": [
+        {
+            "relationship": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v2-0131", "code": "N"}], "text": "家屬"}],
+            "name": {"text": "王小華"},
+            "telecom": [{"system": "phone", "value": "0912-345-678"}]
+        }
+    ]
+}
+
+# ─────────────────────────────────────────────
+# 2. Observation Resources - 生命徵象量測
+# ─────────────────────────────────────────────
+ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+obs_spo2 = {
+    "resourceType": "Observation",
+    "id": "obs-spo2-001",
+    "status": "final",
+    "category": [
+        {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "vital-signs"}]}
+    ],
+    "code": {
+        "coding": [{"system": "http://loinc.org", "code": "59408-5", "display": "Oxygen saturation in Arterial blood by Pulse oximetry"}],
+        "text": "血氧飽和度 (SpO2)"
+    },
+    "subject": {"reference": "Patient/elderly-001"},
+    "effectiveDateTime": ts,
+    "valueQuantity": {"value": 88, "unit": "%", "system": "http://unitsofmeasure.org", "code": "%"},
+    "interpretation": [
+        {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", "code": "L", "display": "Low"}]}
+    ],
+    "referenceRange": [{"low": {"value": 95, "unit": "%"}, "text": "正常範圍 95-100%"}]
+}
+
+obs_hr = {
+    "resourceType": "Observation",
+    "id": "obs-hr-001",
+    "status": "final",
+    "category": [
+        {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "vital-signs"}]}
+    ],
+    "code": {
+        "coding": [{"system": "http://loinc.org", "code": "8867-4", "display": "Heart rate"}],
+        "text": "心率"
+    },
+    "subject": {"reference": "Patient/elderly-001"},
+    "effectiveDateTime": ts,
+    "valueQuantity": {"value": 112, "unit": "beats/min", "system": "http://unitsofmeasure.org", "code": "/min"},
+    "interpretation": [
+        {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", "code": "H", "display": "High"}]}
+    ],
+    "referenceRange": [{"low": {"value": 60, "unit": "/min"}, "high": {"value": 100, "unit": "/min"}, "text": "正常範圍 60-100 bpm"}]
+}
+
+obs_temp = {
+    "resourceType": "Observation",
+    "id": "obs-temp-001",
+    "status": "final",
+    "category": [
+        {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/observation-category", "code": "vital-signs"}]}
+    ],
+    "code": {
+        "coding": [{"system": "http://loinc.org", "code": "8310-5", "display": "Body temperature"}],
+        "text": "體溫"
+    },
+    "subject": {"reference": "Patient/elderly-001"},
+    "effectiveDateTime": ts,
+    "valueQuantity": {"value": 38.9, "unit": "Cel", "system": "http://unitsofmeasure.org", "code": "Cel"},
+    "interpretation": [
+        {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation", "code": "H", "display": "High"}]}
+    ],
+    "referenceRange": [{"low": {"value": 36.1, "unit": "Cel"}, "high": {"value": 37.2, "unit": "Cel"}, "text": "正常範圍 36.1-37.2°C"}]
+}
+
+# ─────────────────────────────────────────────
+# 3. DetectedIssue - 異常警示
+# ─────────────────────────────────────────────
+detected_issue = {
+    "resourceType": "DetectedIssue",
+    "id": "issue-001",
+    "status": "final",
+    "severity": "high",
+    "code": {
+        "coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "code": "CAUTION"}],
+        "text": "健康異常警示"
+    },
+    "patient": {"reference": "Patient/elderly-001"},
+    "identifiedDateTime": ts,
+    "detail": "血氧飽和度 88%（低於正常值95%）、心率 112 bpm（偏高）、體溫 38.9°C（發燒），建議立即派遣救護車。",
+    "implicated": [
+        {"reference": "Observation/obs-spo2-001"},
+        {"reference": "Observation/obs-hr-001"},
+        {"reference": "Observation/obs-temp-001"}
+    ],
+    "mitigation": [
+        {"action": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "code": "13"}], "text": "已通知家屬、社工及消防局"}}
+    ]
+}
+
+# ─────────────────────────────────────────────
+# 4. Location - 醫院地點
+# ─────────────────────────────────────────────
+location = {
+    "resourceType": "Location",
+    "id": "loc-hospital-001",
+    "status": "active",
+    "name": "新北市立聯合醫院",
+    "type": [{"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v3-RoleCode", "code": "HOSP", "display": "Hospital"}]}],
+    "telecom": [{"system": "phone", "value": "02-2982-5188"}],
+    "address": {
+        "use": "work",
+        "text": "新北市三重區興德路65號",
+        "city": "新北市",
+        "district": "三重區",
+        "country": "TW"
+    },
+    "position": {"longitude": 121.4888, "latitude": 25.0642}
+}
+
+# ─────────────────────────────────────────────
+# 5. Practitioner - 醫療人員
+# ─────────────────────────────────────────────
+practitioner = {
+    "resourceType": "Practitioner",
+    "id": "prac-001",
+    "identifier": [{"system": "http://www.mohw.gov.tw/practitioner", "value": "MD-NTP-00123"}],
+    "name": [{"use": "official", "text": "陳醫師", "family": "陳", "given": ["志明"]}],
+    "telecom": [{"system": "phone", "value": "02-2982-5188", "use": "work"}],
+    "qualification": [
+        {
+            "code": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/v2-0360", "code": "MD", "display": "Doctor of Medicine"}]},
+            "issuer": {"display": "衛生福利部"}
+        }
+    ]
+}
+
+# ─────────────────────────────────────────────
+# 6. Encounter - 救護派遣紀錄
+# ─────────────────────────────────────────────
+encounter = {
+    "resourceType": "Encounter",
+    "id": "enc-001",
+    "status": "in-progress",
+    "class": {"system": "http://terminology.hl7.org/CodeSystem/v3-ActCode", "code": "EMER", "display": "emergency"},
+    "type": [{"coding": [{"system": "http://snomed.info/sct", "code": "11429006", "display": "Consultation"}], "text": "緊急救護"}],
+    "subject": {"reference": "Patient/elderly-001"},
+    "participant": [{"individual": {"reference": "Practitioner/prac-001"}}],
+    "period": {"start": ts},
+    "location": [{"location": {"reference": "Location/loc-hospital-001"}, "status": "planned"}],
+    "reasonReference": [{"reference": "DetectedIssue/issue-001"}]
+}
+
+# ─────────────────────────────────────────────
+# 模擬異常偵測邏輯
+# ─────────────────────────────────────────────
+def check_vital_signs(spo2, hr, temp):
+    alerts = []
+    if spo2 < 95:
+        alerts.append(f"⚠️  血氧飽和度異常：{spo2}%（正常 ≥95%）")
+    if hr > 100 or hr < 60:
+        alerts.append(f"⚠️  心率異常：{hr} bpm（正常 60-100 bpm）")
+    if temp > 37.2:
+        alerts.append(f"⚠️  體溫異常：{temp}°C（正常 36.1-37.2°C）")
+    return alerts
+
+# ─────────────────────────────────────────────
+# 執行並輸出結果
+# ─────────────────────────────────────────────
+print("=" * 60)
+print("  FHIR 新北市獨居老人健康監測系統 - 執行結果")
+print("=" * 60)
+
+print("\n【1】Patient Resource 建立成功")
+print(f"  Patient ID : {patient['id']}")
+print(f"  姓名       : {patient['name'][0]['text']}")
+print(f"  出生日期   : {patient['birthDate']}")
+print(f"  居住地址   : {patient['address'][0]['text']}")
+print(f"  緊急聯絡人 : {patient['contact'][0]['name']['text']}")
+
+print("\n【2】生命徵象量測結果（Observation）")
+print(f"  血氧飽和度 : {obs_spo2['valueQuantity']['value']} %")
+print(f"  心率       : {obs_hr['valueQuantity']['value']} bpm")
+print(f"  體溫       : {obs_temp['valueQuantity']['value']} °C")
+print(f"  量測時間   : {ts}")
+
+print("\n【3】異常偵測分析")
+alerts = check_vital_signs(
+    obs_spo2['valueQuantity']['value'],
+    obs_hr['valueQuantity']['value'],
+    obs_temp['valueQuantity']['value']
+)
+for a in alerts:
+    print(f"  {a}")
+
+if alerts:
+    print(f"\n【4】DetectedIssue 觸發警示")
+    print(f"  嚴重程度   : {detected_issue['severity'].upper()}")
+    print(f"  警示說明   : {detected_issue['detail']}")
+    print(f"  處置措施   : {detected_issue['mitigation'][0]['action']['text']}")
+
+    print(f"\n【5】Encounter 救護派遣建立")
+    print(f"  Encounter ID : {encounter['id']}")
+    print(f"  類型         : {encounter['class']['display']}")
+    print(f"  主治醫師     : {practitioner['name'][0]['text']}")
+    print(f"  送往醫院     : {location['name']}")
+    print(f"  醫院地址     : {location['address']['text']}")
+    print(f"  出發時間     : {ts}")
+
+print("\n【6】FHIR Bundle 摘要（所有資源）")
+bundle = {
+    "resourceType": "Bundle",
+    "type": "collection",
+    "entry": [
+        {"resource": patient},
+        {"resource": obs_spo2},
+        {"resource": obs_hr},
+        {"resource": obs_temp},
+        {"resource": detected_issue},
+        {"resource": location},
+        {"resource": practitioner},
+        {"resource": encounter}
+    ]
+}
+print(f"  Bundle 資源數量 : {len(bundle['entry'])} 個 FHIR Resources")
+for e in bundle['entry']:
+    print(f"  - {e['resource']['resourceType']} / {e['resource']['id']}")
+
+# 儲存 JSON
+with open("/home/claude/fhir_project/fhir_bundle.json", "w", encoding="utf-8") as f:
+    json.dump(bundle, f, ensure_ascii=False, indent=2)
+print("\n  ✅ FHIR Bundle 已儲存至 fhir_bundle.json")
+print("=" * 60)
